@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "app/index.ts",
+      "src": "api/index.ts",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "app/index.ts"
+      "dest": "api/index.ts"
     }
   ],
   "crons": [
