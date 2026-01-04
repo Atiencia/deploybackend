@@ -2,7 +2,7 @@ import pool from '../db';
 import { Evento } from '../tipos/tipos';
 import { InscripcionPayload } from '../tipos/tipos';
 import { EmailService } from './emailService';
-import { getIO } from '../socket';
+// import { getIO } from '../socket'; // Socket.io no usado por ahora
 
 export class EventoServices {
   private emailService: EmailService;
@@ -398,11 +398,11 @@ export class EventoServices {
 
       await client.query('COMMIT');
       // Emit socket event to notify clients that suplente list / cupos changed
-      try {
-        getIO().emit('suplentes_actualizados', { eventoId });
-      } catch (emitErr) {
-        console.error('[SOCKET EMIT] actualizarEvento error emitting suplentes_actualizados', emitErr);
-      }
+      // try {
+      //   getIO().emit('suplentes_actualizados', { eventoId });
+      // } catch (emitErr) {
+      //   console.error('[SOCKET EMIT] actualizarEvento error emitting suplentes_actualizados', emitErr);
+      // }
       return eventoActualizado;
 
     } catch (error: any) {
@@ -609,11 +609,11 @@ export class EventoServices {
 
       await client.query('COMMIT');
       // Emit event to notify clients that inscripciones / suplentes changed
-      try {
-        getIO().emit('suplentes_actualizados', { eventoId: payload.eventoId });
-      } catch (emitErr) {
-        console.error('[SOCKET EMIT] inscribirUsuario error emitting suplentes_actualizados', emitErr);
-      }
+      // try {
+      //   getIO().emit('suplentes_actualizados', { eventoId: payload.eventoId });
+      // } catch (emitErr) {
+      //   console.error('[SOCKET EMIT] inscribirUsuario error emitting suplentes_actualizados', emitErr);
+      // }
 
       // 8. Enviar email de confirmación
       try {
@@ -789,11 +789,11 @@ ORDER BY e.fecha ASC;`,
       );
 
       // Emitir actualización para clientes conectados
-      try {
-        getIO().emit('suplentes_actualizados', { eventoId });
-      } catch (emitErr) {
-        console.error('[SOCKET EMIT] darDeBajaInscripcion error emitting suplentes_actualizados', emitErr);
-      }
+      // try {
+      //   getIO().emit('suplentes_actualizados', { eventoId });
+      // } catch (emitErr) {
+      //   console.error('[SOCKET EMIT] darDeBajaInscripcion error emitting suplentes_actualizados', emitErr);
+      // }
     } catch (error: any) {
       console.error(`Error en darDeBajaInscripcion (eventoId=${eventoId}, usuarioId=${usuarioId}):`, error);
       throw error;
@@ -959,11 +959,11 @@ ORDER BY e.fecha ASC;`,
       await client.query('COMMIT');
 
       // Notify clients about suplentes/inscripciones changes
-      try {
-        getIO().emit('suplentes_actualizados', { eventoId });
-      } catch (emitErr) {
-        console.error('[SOCKET EMIT] darDeBajaYPromoverSuplente error emitting suplentes_actualizados', emitErr);
-      }
+      // try {
+      //   getIO().emit('suplentes_actualizados', { eventoId });
+      // } catch (emitErr) {
+      //   console.error('[SOCKET EMIT] darDeBajaYPromoverSuplente error emitting suplentes_actualizados', emitErr);
+      // }
 
       return `Baja realizada con éxito.${mensajePromocion}`;
 
@@ -1009,11 +1009,11 @@ ORDER BY e.fecha ASC;`,
       await client.query('COMMIT');
 
       // Notify clients that suplentes changed
-      try {
-        getIO().emit('suplentes_actualizados', { eventoId });
-      } catch (emitErr) {
-        console.error('[SOCKET EMIT] eliminarSuplente error emitting suplentes_actualizados', emitErr);
-      }
+      // try {
+      //   getIO().emit('suplentes_actualizados', { eventoId });
+      // } catch (emitErr) {
+      //   console.error('[SOCKET EMIT] eliminarSuplente error emitting suplentes_actualizados', emitErr);
+      // }
 
       return 'Suplente eliminado correctamente';
     } catch (err: any) {

@@ -2,7 +2,7 @@ import { Grupo, InscripcionPayload, Subevento, Subgrupo, User, UsuarioConGrupo }
 import pool from '../db';
 import { pathToFileURL } from 'url';
 import { EmailService } from './emailService';
-import { getIO } from '../socket';
+// import { getIO } from '../socket'; // Socket.io no usado por ahora
 import { parse } from 'path';
 
 export class SubGrupoService {
@@ -396,11 +396,11 @@ export class SubGrupoService {
       await client.query('COMMIT');
 
       // Notify clients about suplentes/inscripciones changes
-      try {
-        getIO().emit('suplentes_actualizados', { eventoId });
-      } catch (emitErr) {
-        console.error('[SOCKET EMIT] darDeBajaYPromoverSuplente error emitting suplentes_actualizados', emitErr);
-      }
+      // try {
+      //   getIO().emit('suplentes_actualizados', { eventoId });
+      // } catch (emitErr) {
+      //   console.error('[SOCKET EMIT] darDeBajaYPromoverSuplente error emitting suplentes_actualizados', emitErr);
+      // }
 
       return `Baja realizada con éxito.${mensajePromocion}`;
 

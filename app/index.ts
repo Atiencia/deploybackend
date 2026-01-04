@@ -15,8 +15,9 @@ import noticiaRoutes from "../src/routes/noticiaRoutes";
 import path from "path";
 import subgruposRoutes from "../src/routes/subgruposRoutes";
 import secretariaGrupoRoutes from "../src/routes/secretariaGrupoRoutes";
-import "../src/cron/RecordatorioDonantesDia1";
-import "../src/cron/RecordatorioDonantesDia5";
+import cronRoutes from "../src/routes/cronRoutes";
+// import "../src/cron/RecordatorioDonantesDia1";
+// import "../src/cron/RecordatorioDonantesDia5";
 
 
 dotenv.config({ quiet: true });
@@ -27,7 +28,7 @@ const app = express();
 
 
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
   credentials: true,
 }));
 
@@ -50,17 +51,21 @@ app.use("/api", eventosRoutes);
 app.use("/api", secretariaGrupoRoutes);
 app.use("/api", subgruposRoutes);
 app.use("/api", donantesFijosRoutes);
+app.use("/api/cron", cronRoutes);
 
-const server = app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
+// Para desarrollo local
+if (process.env.NODE_ENV !== 'production') {
+  const server = app.listen(PORT, () => {
+    console.log(`Servidor corriendo en el puerto ${PORT}`);
+  });
 
-// Inicializar socket.io
-try {
-  const { initSocket } = require('../src/socket');
-  initSocket(server);
-} catch (err: any) {
-  console.warn('Socket.io no pudo inicializarse:', err?.message || err);
+  // Socket.io comentado - no se usa por ahora
+  // try {
+  //   const { initSocket } = require('../src/socket');
+  //   initSocket(server);
+  // } catch (err: any) {
+  //   console.warn('Socket.io no pudo inicializarse:', err?.message || err);
+  // }
 }
 
 export default app;

@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app/index.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "app/index.ts"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/recordatorio-dia-1",
+      "schedule": "0 9 1 * *"
+    },
+    {
+      "path": "/api/cron/recordatorio-dia-5",
+      "schedule": "0 9 5 * *"
+    }
+  ]
+}
