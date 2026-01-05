@@ -58,9 +58,10 @@ export const login = async (req: Request, res: Response) => {
       res.cookie("token", token, {
         httpOnly: true,
         signed: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: true, // Siempre HTTPS en producción
+        sameSite: "none", // Permite cookies cross-domain
         maxAge: 1000 * 60 * 60 * 24,
+        domain: process.env.NODE_ENV === "production" ? ".vercel.app" : undefined,
       });
 
       res.json({

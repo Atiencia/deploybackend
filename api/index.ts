@@ -21,26 +21,18 @@ dotenv.config({ quiet: true });
 
 const app = express();
 
-// CORS configurado para permitir todos los dominios de Vercel
+// CORS configurado para cookies cross-domain
 app.use(cors({
   origin: function (origin, callback) {
-    // Permitir requests sin origin (Postman, curl, mobile apps)
     if (!origin) return callback(null, true);
-    
-    // Permitir CUALQUIER dominio de vercel.app
-    if (origin.endsWith('.vercel.app')) {
-      return callback(null, true);
-    }
-    
-    // Permitir localhost para desarrollo
-    if (origin.startsWith('http://localhost')) {
-      return callback(null, true);
-    }
-    
-    // Rechazar otros orígenes
+    if (origin.endsWith('.vercel.app')) return callback(null, true);
+    if (origin.startsWith('http://localhost')) return callback(null, true);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie'],
 }));
 
 app.use(express.json());
