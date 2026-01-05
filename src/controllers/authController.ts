@@ -60,8 +60,7 @@ export const login = async (req: Request, res: Response) => {
         signed: true,
         secure: true, // Siempre HTTPS en producción
         sameSite: "none", // Permite cookies cross-domain
-        maxAge: 1000 * 60 * 60 * 24,
-        domain: process.env.NODE_ENV === "production" ? ".vercel.app" : undefined,
+        maxAge: 1000 * 60 * 60 * 24
       });
 
       res.json({
