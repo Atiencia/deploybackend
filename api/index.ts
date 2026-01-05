@@ -21,29 +21,24 @@ dotenv.config({ quiet: true });
 
 const app = express();
 
-// Configuración CORS mejorada para Vercel
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "https://frontdeploy1.vercel.app",
-  process.env.FRONTEND_URL
-].filter(Boolean);
-
+// CORS configurado para permitir todos los dominios de Vercel
 app.use(cors({
   origin: function (origin, callback) {
-    // Permitir requests sin origin (como Postman, curl, o apps móviles)
+    // Permitir requests sin origin (Postman, curl, mobile apps)
     if (!origin) return callback(null, true);
     
-    // Permitir cualquier subdominio de vercel.app para deploys preview
-    if (origin.includes('.vercel.app')) {
+    // Permitir CUALQUIER dominio de vercel.app
+    if (origin.endsWith('.vercel.app')) {
       return callback(null, true);
     }
     
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    // Permitir localhost para desarrollo
+    if (origin.startsWith('http://localhost')) {
+      return callback(null, true);
     }
+    
+    // Rechazar otros orígenes
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
 }));
