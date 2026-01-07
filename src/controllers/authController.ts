@@ -53,21 +53,23 @@ export const login = async (req: Request, res: Response) => {
     }
 
     try {
-      const { token, nombre, rol } = await authService.login(email, contrasena); // 👈 incluimos rol
+      const { token, nombre, rol } = await authService.login(email, contrasena);
 
+      // Estrategia híbrida: Cookie httpOnly (segura) + token en JSON (compatible con móviles)
       res.cookie("token", token, {
-        httpOnly: true,
+        httpOnly: true,  // JavaScript no puede leerla (seguro contra XSS)
         signed: true,
-        secure: true, // Siempre HTTPS en producción
-        sameSite: "none", // Permite cookies cross-domain
-        maxAge: 1000 * 60 * 60 * 24
+        secure: true,
+        sameSite: "none", // Necesario para cross-domain (frontend y backend en dominios diferentes)
+        maxAge: 1000 * 60 * 60 * 24,
       });
 
+      // También enviamos el token en JSON para mobile/fallback
       res.json({
         message: "Autenticación exitosa",
-        token,
+        token, // El frontend puede guardarlo en localStorage como fallback
         nombre,
-        rol, // 👈 lo enviamos al frontend
+        rol,
       });
     } catch (authError: any) {
       // Mensajes específicos según el error
