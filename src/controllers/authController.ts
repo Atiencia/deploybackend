@@ -61,7 +61,7 @@ export const login = async (req: Request, res: Response) => {
         signed: true,
         secure: true,
         sameSite: "none", // Necesario para cross-domain (frontend y backend en dominios diferentes)
-        maxAge: 1000 * 60 * 60 * 24,
+        maxAge: 1000 * 60 * 60 * 3, // 3 horas (igual que JWT_EXPIRES_IN)
       });
 
       // También enviamos el token en JSON para mobile/fallback

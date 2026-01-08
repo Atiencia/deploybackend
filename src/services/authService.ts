@@ -109,7 +109,7 @@ export class AuthService {
       id_usuario: user.id_usuario,
       rol_nombre: userResult.rows[0].rol_nombre  // Agregar nombre del rol
     };
-    const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "1d" });
+    const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "3h" }); // Usa la variable de entorno (1h)
     return { token, nombre: nombreCompleto, rol: user.id_rol };
   }
 
