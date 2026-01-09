@@ -32,6 +32,9 @@ router.get('/eventos/mis-eventos', authenticate, eventoController.obtenerMisEven
 // GET: Obtener eventos disponibles donde el usuario NO estÃ¡ inscrito
 router.get('/eventos/eventos-disponibles', authenticate, eventoController.obtenerEventosDisponibles);
 
+// GET: Obtener estadísticas de cupos de un evento (DEBE IR ANTES DE /eventos/:id)
+router.get('/eventos/estadisticas/:id', authenticate, eventoController.obtenerEstadisticasEvento);
+
 router.get('/eventos/:id', eventoController.obtenerEvento)
 router.delete('/eventos/inscriptos', eventoController.eliminarInscripto);
 
@@ -98,9 +101,6 @@ router.post('/evento-grupo/:id', eventoController.obtenerEventosPorGrupo);
 //router.delete('/eventos/:id_evento/baja', authenticate, eventoController.darseDeBajaEvento);
 
 // ==================== RUTAS PARA SUPLENTES ====================
-
-// GET: Obtener estadísticas de cupos de un evento (titulares y suplentes)
-router.get('/eventos/estadisticas/:id', authenticate, eventoController.obtenerEstadisticasEvento);
 
 // GET: Obtener lista de suplentes de un evento
 router.get('/eventos/suplentes/:id', authenticate, validateSecretariaEventoAccess(), eventoController.obtenerSuplentes);
