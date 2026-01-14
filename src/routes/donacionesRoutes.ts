@@ -3,6 +3,7 @@ import {
   CrearPreferenciaDonacion,
   ObtenerDonacionesUsuario,
   ObtenerTodasLasDonaciones,
+  ObtenerDonacionesPorGrupo,
   ObtenerDonacionesFiltradas,
   ObtenerTotalesPorPeriodo,
   ObtenerEstadisticasGlobales
@@ -19,8 +20,11 @@ router.post('/crear_preferencia_donacion', CrearPreferenciaDonacion);
 // Ruta GET: obtener las donaciones del usuario autenticado
 router.get('/mis-donaciones', authenticate, ObtenerDonacionesUsuario);
 
-// Ruta GET: obtener todas las donaciones (requiere rol admin)
+// Ruta GET: obtener todas las donaciones (requiere rol admin y sec general)
 router.get('/todas', authenticate, ObtenerTodasLasDonaciones);
+
+// Ruta GET: obtener donaciones por grupo (secretaria grupal)
+router.get('/por-grupo', authenticate, ObtenerDonacionesPorGrupo);
 
 // Ruta GET: obtener donaciones filtradas (para admin y secretaria)
 router.get('/filtradas', authenticate, ObtenerDonacionesFiltradas);

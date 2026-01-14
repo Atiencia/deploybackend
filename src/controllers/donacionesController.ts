@@ -5,6 +5,7 @@ import {
   guardarDonacion,
   obtenerDonacionesUsuario,
   obtenerTodasLasDonaciones,
+  obtenerDonacionesPorGrupo,
   obtenerDonacionesFiltradas,
   obtenerTotalesPorPeriodo,
   obtenerEstadisticasGlobales
@@ -85,13 +86,30 @@ export const ObtenerDonacionesUsuario = async (req: Request, res: Response) => {
   }
 };
 
-/** Obtener todas las donaciones (solo admin) */
+/** Obtener todas las donaciones (admin y sec general) */
 export const ObtenerTodasLasDonaciones = async (req: Request, res: Response) => {
   try {
     const donaciones = await obtenerTodasLasDonaciones();
     res.status(200).json(donaciones);
   } catch (error) {
     console.error('Error obteniendo todas las donaciones:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+/** Obtener donaciones por grupo (secretaria grupal) */
+export const ObtenerDonacionesPorGrupo = async (req: Request, res: Response) => {
+  const usuarioId = req.user?.id_usuario;
+
+  if (!usuarioId) {
+    return res.status(401).json({ error: 'Usuario no autenticado' });
+  }
+
+  try {
+    const donaciones = await obtenerDonacionesPorGrupo(usuarioId);
+    res.status(200).json(donaciones);
+  } catch (error) {
+    console.error('Error obteniendo donaciones por grupo:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };

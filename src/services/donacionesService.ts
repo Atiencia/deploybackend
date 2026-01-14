@@ -75,19 +75,54 @@ export const actualizarEstadoDonacion = async (idDonacion: number, estado: strin
   }
 };
 
-/** Obtiene todas las donaciones (para admin) */
+/** Obtiene todas las donaciones (para admin y sec general) */
 export const obtenerTodasLasDonaciones = async () => {
   try {
     const query = `
-      SELECT d.*, u.nombre, u.apellido, u.email
+      SELECT d.*, u.nombre, u.apellido, u.email, g.nombre as nombre_grupo, g.id_grupo
       FROM donaciones d
       JOIN usuario u ON d.id_usuario = u.id_usuario
+      LEFT JOIN grupo g ON d.id_grupo = g.id_grupo
       ORDER BY d.fecha_donacion DESC
     `;
     const { rows } = await pool.query(query);
     return rows;
   } catch (error) {
     console.error('Error obteniendo todas las donaciones:', error);
+    throw error;
+  }
+};
+
+/** Obtiene las donaciones filtradas por grupo (para secretaria grupal) */
+export const obtenerDonacionesPorGrupo = async (idUsuario: number) => {
+  try {
+    // Primero obtenemos el grupo al que pertenece la secretaria
+    const grupoQuery = `
+      SELECT id_grupo FROM usuariogrupo 
+      WHERE id_usuario = $1 AND rol_en_grupo = 'secretaria'
+      LIMIT 1
+    `;
+    const { rows: grupoRows } = await pool.query(grupoQuery, [idUsuario]);
+    
+    if (grupoRows.length === 0) {
+      return [];
+    }
+    
+    const idGrupo = grupoRows[0].id_grupo;
+    
+    // Obtenemos las donaciones del grupo
+    const query = `
+      SELECT d.*, u.nombre, u.apellido, u.email, g.nombre as nombre_grupo, g.id_grupo
+      FROM donaciones d
+      JOIN usuario u ON d.id_usuario = u.id_usuario
+      LEFT JOIN grupo g ON d.id_grupo = g.id_grupo
+      WHERE d.id_grupo = $1
+      ORDER BY d.fecha_donacion DESC
+    `;
+    const { rows } = await pool.query(query, [idGrupo]);
+    return rows;
+  } catch (error) {
+    console.error('Error obteniendo donaciones por grupo:', error);
     throw error;
   }
 };
