@@ -106,48 +106,84 @@ export const WebhookMercadoPago = async (req: Request, res: Response) => {
       // Comprobar si es un pago de evento o de donación
       const { tipo, usuario_id } = paymentData.metadata;
 
-      if (tipo === 'donacion' && (usuario_id || paymentData.metadata.email)) {
+      if (tipo === 'donacion') {
+        console.log('🎁 Procesando donación desde webhook...');
+        
+        // Verificar si ya existe esta donación
+        const { rows: existingDonation } = await client.query(
+          'SELECT id_donacion FROM donaciones WHERE id_pago_mercadopago = $1',
+          [paymentId]
+        );
+
+        if (existingDonation.length > 0) {
+          console.log('✅ Donación ya procesada anteriormente. ID:', existingDonation[0].id_donacion);
+          await client.query('COMMIT');
+          return res.status(200).send('Donación ya procesada');
+        }
+
+        // Intentar obtener email/nombre de external_reference si no está en metadata
+        let emailFromRef = null;
+        let nombreFromRef = null;
+        let idGrupoFromRef = null;
+
+        if (paymentData.external_reference) {
+          try {
+            const refData = JSON.parse(paymentData.external_reference);
+            emailFromRef = refData.email;
+            nombreFromRef = refData.nombre;
+            idGrupoFromRef = refData.id_grupo;
+            console.log('📋 Datos recuperados de external_reference:', refData);
+          } catch (e) {
+            console.warn('⚠️ No se pudo parsear external_reference');
+          }
+        }
+
+        const emailFinal = paymentData.metadata.email || emailFromRef || paymentData.payer?.email;
+        const nombreFinal = paymentData.metadata.nombre || nombreFromRef || paymentData.payer?.first_name || 'Anónimo';
+        const idGrupoFinal = paymentData.metadata.id_grupo || idGrupoFromRef || null;
+
         // Procesar donación
         const donacion = {
           id_usuario: usuario_id || null,
           monto: paymentData.transaction_amount,
-          descripcion: usuario_id ? `Donación - Usuario ID: ${usuario_id}` : `Donación - ${paymentData.metadata.nombre || 'Anónimo'}`,
+          descripcion: usuario_id ? `Donación - Usuario ID: ${usuario_id}` : `Donación - ${nombreFinal}`,
           fecha_donacion: new Date(),
           estado: 'aprobado' as 'pendiente' | 'aprobado' | 'rechazado',
           id_pago_mercadopago: paymentId,
           metadata: paymentData,
-          id_grupo: paymentData.metadata.id_grupo || null
+          id_grupo: idGrupoFinal
         };
 
         const donacionGuardada = await guardarDonacion(donacion);
-        console.log('Donación aprobada y guardada. ID:', donacionGuardada.id_donacion);
+        console.log('✅ Donación aprobada y guardada desde webhook. ID:', donacionGuardada.id_donacion);
 
-
-        // Enviar email de confirmación de donacion.
-        let emailDestinatario: string | null = null;
-        let nombreDestinatario: string | null = null;
+        // Enviar email de confirmación de donacion
+        let emailDestinatario: string | null = emailFinal;
+        let nombreDestinatario: string | null = nombreFinal;
 
         if (usuario_id) {
-          const authService = new AuthService();
-          const usuario = await authService.obtenerUsuarioPorId(usuario_id);
-          if (usuario) {
-            emailDestinatario = usuario.email;
-            nombreDestinatario = usuario.nombre;
+          try {
+            const authService = new AuthService();
+            const usuario = await authService.obtenerUsuarioPorId(usuario_id);
+            if (usuario) {
+              emailDestinatario = usuario.email;
+              nombreDestinatario = usuario.nombre;
+            }
+          } catch (error) {
+            console.error('Error obteniendo usuario para email:', error);
           }
-        } else if (paymentData.metadata.email) {
-          emailDestinatario = paymentData.metadata.email;
-          nombreDestinatario = paymentData.metadata.nombre || 'Donante';
         }
 
         if (emailDestinatario && nombreDestinatario) {
-          await enviarEmailConfirmarDonacion(nombreDestinatario, emailDestinatario);
-          console.log(`📩 Email enviado a ${emailDestinatario}`);
+          try {
+            await enviarEmailConfirmarDonacion(nombreDestinatario, emailDestinatario);
+            console.log(`📩 Email enviado a ${emailDestinatario}`);
+          } catch (emailError) {
+            console.error('⚠️ Error enviando email:', emailError);
+          }
         } else {
-          console.warn(`⚠️ No se pudo obtener email para enviar confirmación de donación.`);
+          console.warn('⚠️ No se pudo obtener email para enviar confirmación de donación.');
         }
-
-
-        // Fin: Enviar email de confirmación de donacion.
 
 
       } else if (tipo === 'evento_pago') {

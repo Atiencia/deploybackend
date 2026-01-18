@@ -36,6 +36,23 @@ export const CrearPreferenciaDonacion = async (req: Request, res: Response) => {
   const preference = new Preference(client);
 
   try {
+    // Crear external_reference con los datos importantes
+    const externalRef = JSON.stringify({
+      email: email || '',
+      nombre: nombre || '',
+      id_grupo: id_grupo || null,
+      timestamp: Date.now()
+    });
+
+    console.log('📝 Creando preferencia de donación:', {
+      monto,
+      descripcion,
+      email,
+      nombre,
+      id_grupo,
+      usuarioId
+    });
+
     const preferenceData = await preference.create({
       body: {
         items: [
@@ -46,6 +63,7 @@ export const CrearPreferenciaDonacion = async (req: Request, res: Response) => {
             unit_price: parseFloat(monto),
           }
         ],
+        external_reference: externalRef,
         metadata: {
           usuario_id: usuarioId || null,
           tipo: 'donacion',
@@ -216,6 +234,27 @@ export const ProcesarPagoDonacion = async (req: Request, res: Response) => {
     // Extraer metadata
     const { usuario_id, tipo, email, nombre, id_grupo } = paymentData.metadata || {};
 
+    // Intentar obtener datos de external_reference si no están en metadata
+    let emailFromRef = email;
+    let nombreFromRef = nombre;
+    let idGrupoFromRef = id_grupo;
+
+    if (paymentData.external_reference) {
+      try {
+        const refData = JSON.parse(paymentData.external_reference);
+        emailFromRef = emailFromRef || refData.email;
+        nombreFromRef = nombreFromRef || refData.nombre;
+        idGrupoFromRef = idGrupoFromRef || refData.id_grupo;
+        console.log('📋 Datos recuperados de external_reference:', refData);
+      } catch (e) {
+        console.warn('⚠️ No se pudo parsear external_reference');
+      }
+    }
+
+    const emailFinal = emailFromRef || paymentData.payer?.email;
+    const nombreFinal = nombreFromRef || paymentData.payer?.first_name || 'Anónimo';
+    const idGrupoFinal = idGrupoFromRef || null;
+
     if (tipo !== 'donacion') {
       return res.status(400).json({
         error: 'Este pago no corresponde a una donación'
@@ -228,12 +267,12 @@ export const ProcesarPagoDonacion = async (req: Request, res: Response) => {
       monto: paymentData.transaction_amount,
       descripcion: usuario_id 
         ? `Donación - Usuario ID: ${usuario_id}` 
-        : `Donación - ${nombre || 'Anónimo'}`,
+        : `Donación - ${nombreFinal}`,
       fecha_donacion: new Date(),
       estado: 'aprobado' as 'pendiente' | 'aprobado' | 'rechazado',
       id_pago_mercadopago: payment_id,
       metadata: paymentData,
-      id_grupo: id_grupo || null
+      id_grupo: idGrupoFinal
     };
 
     // Guardar la donación en la base de datos
@@ -241,8 +280,8 @@ export const ProcesarPagoDonacion = async (req: Request, res: Response) => {
     console.log('✅ Donación guardada exitosamente. ID:', donacionGuardada.id_donacion);
 
     // Enviar email de confirmación
-    let emailDestinatario: string | null = null;
-    let nombreDestinatario: string | null = null;
+    let emailDestinatario: string | null = emailFinal;
+    let nombreDestinatario: string | null = nombreFinal;
 
     if (usuario_id) {
       const authService = new AuthService();
@@ -251,9 +290,6 @@ export const ProcesarPagoDonacion = async (req: Request, res: Response) => {
         emailDestinatario = usuario.email;
         nombreDestinatario = usuario.nombre;
       }
-    } else if (email) {
-      emailDestinatario = email;
-      nombreDestinatario = nombre || 'Donante';
     }
 
     if (emailDestinatario && nombreDestinatario) {
