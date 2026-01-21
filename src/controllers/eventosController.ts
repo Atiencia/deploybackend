@@ -123,8 +123,13 @@ export class EventoController {
 
         console.log(`[DEBUG] Eventos vigentes encontrados: ${eventos.length}`);
       } else {
-        // Admin o secretaria general: todos los eventos vigentes
-        eventos = await this.eventoService.obtenerEventosVigentes(usuarioId);
+        if (rolNombre === 'admin' || rolNombre === 'secretaria general') {
+          // Admin o secretaria general: todos los eventos vigentes (incluye grupos privados)
+          eventos = await this.eventoService.obtenerEventosVigentesAdmin();
+        } else {
+          // Usuario normal o sin rol: eventos vigentes según permisos sobre grupos
+          eventos = await this.eventoService.obtenerEventosVigentes(usuarioId);
+        }
       }
 
       if (eventos.length === 0) {
@@ -281,7 +286,7 @@ export class EventoController {
 
   //ARREGLAR ENDPOINT
   crearEvento = async (req: Request, res: Response) => {
-    const { evento: { nombre, fecha, descripcion, cupos, cupos_suplente, fecha_limite_inscripcion, fecha_limite_baja, lugar, categoria, costo, cuenta_destino, formSubgrupos, id_grupo } } = req.body as
+    const { evento: { nombre, fecha, descripcion, cupos, cupos_suplente, fecha_limite_inscripcion, fecha_limite_baja, lugar, categoria, costo, cuenta_destino, formSubgrupos = [], id_grupo } } = req.body as
       {
         evento:
         {

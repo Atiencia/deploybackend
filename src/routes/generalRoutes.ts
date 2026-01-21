@@ -1,6 +1,6 @@
 import { Router} from "express";
 import { register, login, logout, getUsuarios, verificarEmail, reenviarVerificacion, solicitarRecuperacionContrasena, restablecerContrasena } from "../controllers/authController";
-import { authenticate, authorizeRoles } from "../middleware/authMiddleware";
+import { authenticate, authorizeRoles, optionalAuthenticate } from "../middleware/authMiddleware";
 import { EventoController } from "../controllers/eventosController";
 import { EventoGrupoService } from "../services/eventoGrupoService";
 import { EventoServices } from "../services/eventosService";
@@ -27,9 +27,10 @@ const router = Router();
  */
 router.get('/grupos', grupoController.obtenerGrupos);
 
-// Ruta GET: obtiene todos los roles disponibles en el sistema.
-// Si no existen roles registrados, devolverÃ¡ un mensaje indicÃ¡ndolo.
-router.get('/eventos-vigentes', eventoController.obtenerEventosVigentes);
+// Ruta GET: eventos vigentes.
+// Usa autenticación opcional: si hay token se filtra según rol,
+// si no hay token se devuelven solo eventos públicos.
+router.get('/eventos-vigentes', optionalAuthenticate, eventoController.obtenerEventosVigentes);
 
 
 export default router;

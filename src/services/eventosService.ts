@@ -75,12 +75,17 @@ export class EventoServices {
         -- Cálculo de cupos suplentes
             (e.cupos_suplente - COALESCE(COUNT(DISTINCT CASE WHEN ie.es_suplente = TRUE THEN ie.id_usuario END), 0))::int as suplentes_disponibles
         FROM evento e
-        JOIN evento_grupo eg ON e.id_evento = eg.id_evento
-        JOIN grupo g ON eg.id_grupo = g.id_grupo
+        LEFT JOIN evento_grupo eg ON e.id_evento = eg.id_evento
+        LEFT JOIN grupo g ON eg.id_grupo = g.id_grupo
         -- Join necesario para contar las personas inscritas
         LEFT JOIN inscripcion_evento ie ON e.id_evento = ie.id_evento
         WHERE e.estado = $1
-          AND g."solicitudNecesitada" = FALSE
+          AND (
+            -- Eventos asociados a grupos públicos
+            g."solicitudNecesitada" = FALSE
+            -- O eventos sin grupo asociado
+            OR g.id_grupo IS NULL
+          )
         GROUP BY e.id_evento, g.id_grupo, g.nombre
         ORDER BY e.fecha ASC;`,
         ['vigente']
@@ -96,8 +101,8 @@ export class EventoServices {
           -- Cálculo de cupos suplentes
           (e.cupos_suplente - COALESCE(COUNT(DISTINCT CASE WHEN ie.es_suplente = TRUE THEN ie.id_usuario END), 0))::int as suplentes_disponibles
       FROM evento e
-      JOIN evento_grupo eg ON e.id_evento = eg.id_evento
-      JOIN grupo g ON eg.id_grupo = g.id_grupo
+        LEFT JOIN evento_grupo eg ON e.id_evento = eg.id_evento
+        LEFT JOIN grupo g ON eg.id_grupo = g.id_grupo
       -- Join 1: Verificar permisos del usuario en grupos privados
       LEFT JOIN "preferencia_grupo" pg 
           ON g.id_grupo = pg.id_grupo 
@@ -106,15 +111,40 @@ export class EventoServices {
       LEFT JOIN inscripcion_evento ie ON e.id_evento = ie.id_evento
       WHERE e.estado = 'vigente'
       AND (
-          -- El grupo es público
-          g."solicitudNecesitada" = FALSE
-          OR
-          -- O es privado y el usuario está aprobado
-          (g."solicitudNecesitada" = TRUE AND pg.status = 'aprobado')
+          -- Eventos sin grupo: visibles para todos los usuarios
+          g.id_grupo IS NULL
+          OR (
+            -- El grupo es público
+            g."solicitudNecesitada" = FALSE
+          )
+          OR (
+            -- Grupo privado y el usuario está aprobado
+            g."solicitudNecesitada" = TRUE AND pg.status = 'aprobado'
+          )
       )
       GROUP BY e.id_evento, g.id_grupo, g.nombre
       ORDER BY e.fecha ASC;`,
       [id_usuario]
+    );
+    return rows;
+  }
+
+  // Obtiene todos los eventos vigentes sin filtrar por visibilidad del grupo
+  // Pensado para roles con acceso total (admin, secretaria general)
+  async obtenerEventosVigentesAdmin(): Promise<Evento[]> {
+    const { rows } = await pool.query<Evento>(
+      `SELECT 
+          e.*, 
+          g.nombre as nombre_grupo,
+          (e.cupos - COALESCE(COUNT(DISTINCT CASE WHEN ie.es_suplente = FALSE THEN ie.id_usuario END), 0))::int as cupos_disponibles,
+          (e.cupos_suplente - COALESCE(COUNT(DISTINCT CASE WHEN ie.es_suplente = TRUE THEN ie.id_usuario END), 0))::int as suplentes_disponibles
+      FROM evento e
+      LEFT JOIN evento_grupo eg ON e.id_evento = eg.id_evento
+      LEFT JOIN grupo g ON eg.id_grupo = g.id_grupo
+      LEFT JOIN inscripcion_evento ie ON e.id_evento = ie.id_evento
+      WHERE e.estado = 'vigente'
+      GROUP BY e.id_evento, g.id_grupo, g.nombre
+      ORDER BY e.fecha ASC;`
     );
     return rows;
   }
@@ -512,8 +542,12 @@ export class EventoServices {
   // Inscribe a un usuario en un evento, verificando cupos y si ya está inscrito
   async inscribirUsuario(payload: InscripcionPayload & { nombreRemitente?: string; comprobante?: string }): Promise<string> {
     console.log('payload', payload)
-    const client = await pool.connect();
+    let client;
     try {
+      console.log('🔄 Intentando obtener conexión del pool...');
+      client = await pool.connect();
+      console.log('✅ Conexión obtenida exitosamente');
+      
       await client.query('BEGIN');
 
       // 1. Verificar evento
@@ -643,11 +677,17 @@ export class EventoServices {
       return mensaje;
 
     } catch (error: any) {
-      await client.query('ROLLBACK');
-      console.error(error)
-      throw new Error(error.message);
+      if (client) {
+        await client.query('ROLLBACK');
+      }
+      console.error('❌ Error en inscribirUsuario:', error);
+      console.error('Stack:', error.stack);
+      throw new Error(error.message || 'Error al inscribir usuario');
     } finally {
-      client.release();
+      if (client) {
+        client.release();
+        console.log('🔓 Conexión liberada');
+      }
     }
   }
 
