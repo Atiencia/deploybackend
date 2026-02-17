@@ -52,15 +52,15 @@ export const CrearPreferencia = async (req: Request, res: Response) => {
           tipo: 'evento_pago',
           evento_id: eventoId,
           usuario_id: usuarioId,
-          formData: JSON.stringify(form_data) // Guardar los datos del formulario
+          form_data: JSON.stringify(form_data) // Guardar los datos del formulario
         },
         back_urls: {
-          success: `${process.env.FRONTEND_URL}/eventos/${eventoId}/inscripcion/confirmada`,
-          failure: `${process.env.FRONTEND_URL}/eventos/${eventoId}/inscripcion/fallida`,
-          pending: `${process.env.FRONTEND_URL}/eventos/${eventoId}/inscripcion/pendiente`
+          success: `${process.env.FRONTEND_URL}/mis-eventos`,
+          failure: `${process.env.FRONTEND_URL}/eventos-disponibles`,
+          pending: `${process.env.FRONTEND_URL}/eventos-disponibles`
         },
         auto_return: "approved" as const,
-        notification_url: `${process.env.FRONTEND_URL}/api/mercadopago/webhook`
+        notification_url: `${process.env.BACKEND_URL}/api/mercadopago/webhook`
       }
     });
 
