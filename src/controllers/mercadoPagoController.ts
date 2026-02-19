@@ -57,7 +57,7 @@ export const CrearPreferencia = async (req: Request, res: Response) => {
         back_urls: {
           success: `${process.env.FRONTEND_URL}/mis-eventos`,
           failure: `${process.env.FRONTEND_URL}/eventos-disponibles`,
-          pending: `${process.env.FRONTEND_URL}/eventos-disponibles`
+          // pending: `${process.env.FRONTEND_URL}/eventos-disponibles`
         },
         auto_return: "approved" as const,
         notification_url: `${process.env.BACKEND_URL}/api/mercadopago/webhook`

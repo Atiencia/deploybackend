@@ -6,8 +6,7 @@ import {
   ObtenerDonacionesPorGrupo,
   ObtenerDonacionesFiltradas,
   ObtenerTotalesPorPeriodo,
-  ObtenerEstadisticasGlobales,
-  ProcesarPagoDonacion
+  ObtenerEstadisticasGlobales
 } from '../controllers/donacionesController';
 import { authenticate, optionalAuthenticate } from '../middleware/authMiddleware';
 
@@ -20,7 +19,6 @@ router.post('/crear_preferencia_donacion', CrearPreferenciaDonacion);
 
 // Ruta POST: procesar pago de donación después del pago exitoso
 // El frontend envía payment_id, status, external_reference después de la redirección de Mercado Pago
-router.post('/procesar-pago', ProcesarPagoDonacion);
 
 // Ruta GET: obtener las donaciones del usuario autenticado
 router.get('/mis-donaciones', authenticate, ObtenerDonacionesUsuario);
