@@ -76,7 +76,7 @@ export const CrearPreferenciaDonacion = async (req: Request, res: Response) => {
           failure: `${process.env.FRONTEND_URL}/donaciones/donar`,
           // pending: `${process.env.FRONTEND_URL}/donaciones/pendiente`
         },
-        auto_return: "approved" as const,
+        ...(process.env.NODE_ENV === 'production' && { auto_return: "approved" as const }),
         notification_url: `${process.env.BACKEND_URL}/api/mercadopago/webhook`
       }
     });
